@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MindMate Dashboard</title>
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            background: url("{{ url_for('static', filename='img2.jpg') }}") no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        h1 {
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(12px);
+            padding: 25px;
+            margin: 25px 120px 25px auto;
+            width: 320px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            transition: 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .emotion-item {
+            margin: 8px 0;
+            font-weight: 500;
+        }
+
+        .total-number {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+    </style>
+</head>
+
+<body>
+
+<h1>MindMate Analytics 📊</h1>
+
+<div class="card">
+    <h2>Total Chats</h2>
+    <div class="total-number">{{ total_chats }}</div>
+</div>
+
+<div class="card">
+    <h2>Emotion Breakdown</h2>
+    {% for emotion, count in emotion_counts %}
+        <div class="emotion-item">
+            {{ emotion.capitalize() }} : {{ count }}
+        </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>

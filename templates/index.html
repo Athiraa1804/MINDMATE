@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MindMate AI 💙</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: url("{{ url_for('static', filename='bg.jpg') }}") no-repeat center center fixed;
+            background-size: cover;
+            
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top:40px;
+            min-height: 100vh;
+        }
+        body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65); /* darkness level */
+    z-index: -1;
+}
+
+       .chat-container {
+    width: 300px;
+    height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+.header {
+    background: linear-gradient(135deg, rgba(15, 32, 39, 0.85), rgba(44, 83, 100, 0.75));
+    backdrop-filter: blur(18px);
+    padding: 20px 25px;
+    border-radius: 25px;
+
+    width: 350px;
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    
+
+    box-shadow: 
+        0 15px 50px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+
+    border: 1px solid rgba(255,255,255,0.08);
+    
+}
+
+.header:hover {
+    transform: none;
+}
+
+
+/* Title */
+.title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+
+    background: white;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Analytics Button */
+.dashboard-link {
+    display: inline-block !important;
+    padding: 10px 20px !important;
+    border-radius: 25px !important;
+
+    background: linear-gradient(135deg, #4a90e2, #357abd) !important;
+    color: white !important;
+    text-decoration: none !important;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    box-shadow: 0 8px 20px rgba(74,144,226,0.35);
+    transition: all 0.3s ease;
+}
+
+.dashboard-link:hover {
+    background: linear-gradient(135deg, #5aa0f2, #2f6fb0) !important;
+    transform: translateY(-3px);
+}
+
+/* Hover effect */
+        .chatbox {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 15px;
+            max-width: 75%;
+            font-size: 14px;
+            animation: popIn 0.2s ease-in;
+        }
+
+        .user {
+            background: #4a90e2;
+            color: white;
+            align-self: flex-end;
+        }
+
+        .bot {
+            background: #f0f0f0;
+            align-self: flex-start;
+        }
+
+        .tip {
+            background: #e3f2fd;
+            font-style: italic;
+            align-self: flex-start;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background: white;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            outline: none;
+            font-size: 14px;
+        }
+
+        button {
+            margin-left: 10px;
+            padding: 12px 18px;
+            border: none;
+            border-radius: 25px;
+            background: #4a90e2;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background: #357abd;
+            transform: scale(1.05);
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Login Screen */
+        .login-screen {
+            position: absolute;
+            width: 420px;
+            height: 380px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            top: 220px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .login-screen input {
+            width: 70%;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="login-screen" id="loginScreen">
+        <h2>Welcome to MindMate💙</h2>
+        <input type="text" id="username" placeholder="Enter your name">
+        <button onclick="startChat()">Start</button>
+    </div>
+
+    <div class="header">
+        <div class="title">MindMate AI💙</div>
+       <a href="/dashboard" class="dashboard-link">View Analytics 📊</a>
+</div>
+    </div>
+
+    <div class="chatbox" id="chatbox"></div>
+
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your message...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+
+<script>
+
+let userName = "";
+
+function startChat() {
+    userName = document.getElementById("username").value;
+    if (userName.trim() === "") return;
+
+    document.getElementById("loginScreen").classList.add("hidden");
+
+    let chatbox = document.getElementById("chatbox");
+    chatbox.innerHTML += `<div class="message bot">Hello ${userName} 💙 I'm here for you.</div>`;
+}
+
+function sendMessage() {
+    let message = document.getElementById("userInput").value;
+    if (message.trim() === "") return;
+
+    let chatbox = document.getElementById("chatbox");
+    chatbox.innerHTML += `<div class="message user">${message}</div>`;
+
+    fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          message: message,
+          username: userName
+})
+    })
+    .then(response => response.json())
+    .then(data => {
+        chatbox.innerHTML += `<div class="message bot">${data.reply}</div>`;
+        if (data.tip) {
+            chatbox.innerHTML += `<div class="message tip">Tip: ${data.tip}</div>`;
+        }
+        chatbox.scrollTop = chatbox.scrollHeight;
+    });
+
+    document.getElementById("userInput").value = "";
+}
+
+</script>
+
+</body>
+</html>
