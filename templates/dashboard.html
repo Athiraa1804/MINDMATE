@@ -44,10 +44,13 @@
             font-weight: 600;
         }
 
-        .emotion-item {
-            margin: 8px 0;
-            font-weight: 500;
-        }
+          .emotion-item {
+    margin: 8px 0;
+    font-weight: 500;
+    padding: 6px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.08);
+}
 
         .total-number {
             font-size: 28px;
@@ -74,6 +77,11 @@
         </div>
     {% endfor %}
 </div>
-
+<div class="card">
+    <h2>Most Frequent Emotion</h2>
+    <div class="total-number">
+        {{ most_common.capitalize() }}
+    </div>
+</div>
 </body>
 </html>

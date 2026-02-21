@@ -16,23 +16,30 @@ if USE_TRANSFORMER:
     from emotion_model import detect_emotion
 else:
     # Lightweight rule-based fallback
-    def detect_emotion(text):
-        text = text.lower()
+   def detect_emotion(text):
+    text = text.lower()
 
-        if any(word in text for word in ["sad", "lonely", "depressed", "upset"]):
-            return "sadness"
+    intensity_words = [
+        "very", "extremely", "so", "really",
+        "terribly", "too much", "overwhelming", "completely"
+    ]
 
-        elif any(word in text for word in ["happy", "great", "excited", "good", "better"]):
-            return "joy"
+    intensity = any(word in text for word in intensity_words)
 
-        elif any(word in text for word in ["angry", "frustrated", "annoyed"]):
-            return "anger"
+    if any(word in text for word in ["sad", "lonely", "depressed", "upset"]):
+        return "sadness_high" if intensity else "sadness"
 
-        elif any(word in text for word in ["scared", "afraid", "tensed", "stressed", "pressure", "anxious", "worried"]):
-            return "fear"
+    elif any(word in text for word in ["happy", "great", "excited", "good", "better"]):
+        return "joy_high" if intensity else "joy"
 
-        else:
-            return "neutral"
+    elif any(word in text for word in ["angry", "frustrated", "annoyed"]):
+        return "anger_high" if intensity else "anger"
+
+    elif any(word in text for word in ["scared", "afraid", "tensed", "stressed", "pressure", "anxious", "worried"]):
+        return "fear_high" if intensity else "fear"
+
+    else:
+        return "neutral"
 
 
 # -------------------------
@@ -86,27 +93,41 @@ responses = {
         "Let’s talk through it."
     ]
 }
+responses.update({
+    "fear_high": [
+        "That sounds overwhelming. Let's take this step by step.",
+        "It seems this stress is really intense right now."
+    ],
+    "sadness_high": [
+        "That sounds deeply painful. I'm really here for you.",
+        "It feels like this is weighing heavily on you."
+    ],
+    "anger_high": [
+        "That must have been extremely frustrating.",
+        "It sounds like this really hit you hard."
+    ],
+    "joy_high": [
+        "That’s amazing! I can feel your excitement!",
+        "Wow, that sounds incredibly uplifting!"
+    ]
+})
 
 follow_ups = {
-    "joy": [
-        "What made you feel this way?",
-        "Do you want to share more about it?"
+        "fear_high": [
+        "Would you like to talk about what’s causing this stress?",
+        "What’s making it feel so overwhelming?"
     ],
-    "sadness": [
-        "Do you want to tell me what caused this?",
-        "How long have you been feeling like this?"
+    "sadness_high": [
+        "Do you want to share what happened?",
+        "How long has this been building up?"
     ],
-    "anger": [
+    "anger_high": [
         "What triggered this reaction?",
-        "Would you like to talk about what happened?"
+        "Do you want to explain what happened?"
     ],
-    "fear": [
-        "Is something specific worrying you?",
-        "When did this start?"
-    ],
-    "neutral": [
-        "What would you like to talk about?",
-        "How has your day been?"
+    "joy_high": [
+        "What made this so exciting?",
+        "Tell me more about this good news!"
     ]
 }
 
@@ -129,7 +150,6 @@ crisis_words = ["suicide", "kill myself", "die", "end my life", "can't live"]
 def home():
     return render_template("index.html")
 
-
 @app.route("/chat", methods=["POST"])
 def chat():
     user_input = request.json["message"]
@@ -140,6 +160,18 @@ def chat():
         return jsonify({
             "reply": "I'm really concerned about you. Please contact Kiran Mental Health Helpline: 1800-599-0019 💙"
         })
+
+    # ---------------- STORE CONVERSATION HISTORY ----------------
+    # Store conversation history safely
+    history = session.get("history", [])
+
+    if isinstance(history, list):
+        history.append(user_input)
+    else:
+        history = [user_input]
+    # Keep only last 5 messages
+    history = history[-5:]
+    session["history"] = history
 
     # ---------------- EMOTION DETECTION ----------------
     emotion = detect_emotion(user_input)
@@ -152,8 +184,17 @@ def chat():
     last_reply = session.get("last_reply")
 
     # ---------------- RESPONSE SELECTION ----------------
-    base_options = responses[emotion]
-    follow_options = follow_ups[emotion]
+    # ---------------- RESPONSE SELECTION ----------------
+    base_options = responses.get(emotion, responses["neutral"])
+    follow_options = follow_ups.get(emotion, ["Tell me more."])
+
+# Avoid repeating same reply
+    filtered_options = [r for r in base_options if r != last_reply]
+    if not filtered_options:
+       filtered_options = base_options
+
+    selected_base = random.choice(filtered_options)
+    selected_follow = random.choice(follow_options)
 
     # Avoid repeating same reply
     filtered_options = [r for r in base_options if r != last_reply]
@@ -163,13 +204,19 @@ def chat():
     selected_base = random.choice(filtered_options)
     selected_follow = random.choice(follow_options)
 
-    # Context awareness
+    # ---------------- CONTEXT AWARENESS ----------------
+    if len(history) > 1:
+        previous_message = history[-2]
+        if "exam" in previous_message.lower():
+            selected_base += " I remember you mentioned exams earlier."
+
+    # ---------------- CONTEXT CONTINUITY ----------------
     if last_emotion == emotion:
         reply = f"I can sense you're still feeling {emotion}. {selected_base} {selected_follow}"
     else:
         reply = f"{selected_base} {selected_follow}"
 
-    # Personalization
+    # ---------------- PERSONALIZATION ----------------
     if username:
         reply = f"{username}, {reply}"
 
@@ -177,7 +224,7 @@ def chat():
     session["last_emotion"] = emotion
     session["last_reply"] = selected_base
 
-    # Tip
+    # ---------------- RELAXATION TIP ----------------
     tip = relaxation_tips.get(emotion, "")
 
     # ---------------- SAVE TO DATABASE ----------------
@@ -198,26 +245,28 @@ def chat():
         "reply": reply,
         "tip": tip
     })
-
-
 @app.route("/dashboard")
 def dashboard():
     conn = sqlite3.connect("mindmate.db")
     cursor = conn.cursor()
 
+    # Total chats
     cursor.execute("SELECT COUNT(*) FROM chats")
     total_chats = cursor.fetchone()[0]
 
+    # Emotion counts
     cursor.execute("SELECT emotion, COUNT(*) FROM chats GROUP BY emotion")
     emotion_counts = cursor.fetchall()
+
+    # Calculate most frequent emotion
+    most_common = max(emotion_counts, key=lambda x: x[1])[0] if emotion_counts else "None"
 
     conn.close()
 
     return render_template("dashboard.html",
                            total_chats=total_chats,
-                           emotion_counts=emotion_counts)
-
-
+                           emotion_counts=emotion_counts,
+                           most_common=most_common)
 # -------------------------
 # RUN APP
 # -------------------------
