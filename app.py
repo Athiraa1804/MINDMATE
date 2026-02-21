@@ -183,7 +183,7 @@ def chat():
     last_emotion = session.get("last_emotion")
     last_reply = session.get("last_reply")
 
-    # ---------------- RESPONSE SELECTION ----------------
+   
     # ---------------- RESPONSE SELECTION ----------------
     base_options = responses.get(emotion, responses["neutral"])
     follow_options = follow_ups.get(emotion, ["Tell me more."])
